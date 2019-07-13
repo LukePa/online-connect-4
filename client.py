@@ -1,4 +1,4 @@
-import socket, sys
+import socket, sys, connect4logic
 
 
 def enterDetails():
@@ -33,9 +33,10 @@ def waitForStart(sock):
         try:
             message = sock.recv(4096)
             messageDecoded = message.decode()
-            print(messageDecoded)
             if messageDecoded.lower() == "start":
                 exit = True
+            else:
+                print(messageDecoded)
         except socket.timeout:
             continue
         except ConnectionResetError:

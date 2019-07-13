@@ -1,4 +1,4 @@
-import socket
+import socket, connect4logic
 
 PORT = 7890
 
