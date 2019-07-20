@@ -1,4 +1,4 @@
-import socket, connect4logic
+import socket, connect4logic, threading
 
 PORT = 7890
 
@@ -91,11 +91,70 @@ class Gameroom(object):
             player.sendMessage("Added to gameroom...")
         self.checkToStart()
 
+
+    def _gameThreadMethod(self):
+        """Runs as thread, handles gameloop that players interact with"""
+        self._players[0].setColour("red")
+        self._players[1].setColour("yellow")
+        for player in self._players:
+            player.sendMessage(player.getColour())
+        whosTurn = self._players[0]
+        exit = False
+        turn = 0
+        lastMove = ()
+        self.board = connect4logic.Board()
+
+        while not exit:
+            for player in self._players:
+                if whosTurn == player:
+                    player.sendMessage("yours")
+                else:
+                    player.sendMessage("other")
+
+            while True:
+                move = whosTurn.getMessage()
+                columnNum = int(move)
+                isValid = self.board.fullColumn(columnNum)
+                if isValid:
+                    whosTurn.sendMessage("confirmed")
+                    lastMove = self.board.placePiece(columnNum, whosTurn.getColour())
+                    break
+                else:
+                    whosTurn.sendMessage("denied")
+
+            if self._players[0] == whosTurn:
+                self._players[1].sendMessage(str(columnNum))
+            else:
+                self._players[0].sendMessage(str(columnNum))
+
+            win = self.board.checkWin(lastMove)
+            if not win:
+                for player in self._players:
+                    player.sendMessage("false")
+                if whosTurn == self._players[0]:
+                    whosTurn = self._players[1]
+                else:
+                    whosTurn = self._players[0]
+            else:
+                if whosTurn == self._players[0]:
+                    loser = self._players[1]
+                    winner = self._playrs[0]
+                else:
+                    loser = self._players[0]
+                    winner = self._players[1]
+                winner.sendMessage("won")
+                loser.sendMessage("lose")
+
+            turn += 1
+
+
     def _start(self):
         """Starts the gameloop"""
-        print("A game has started")
+        self._gameThread = threading.Thread(target = self._gameThreadMethod)
         for player in self._players:
             player.sendMessage("start")
+        print("A game has started")
+        self._gameThread.start()
 
 
 

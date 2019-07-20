@@ -66,11 +66,13 @@ class Board():
                     column[i] = colour
                     rowVal = i
                     break
-            return columnVal, rowVal
+            return (columnVal, rowVal)
 
 
-    def checkWin(self, x, y):
-        """Given x and y coord, check if it involved in a win"""
+    def checkWin(self, coords):
+        """Given x and y coord, check if it involved in a win, coord is tuple"""
+        x = coords[0]
+        y = coords[1]
         if not self.onBoard(x,y):
             raise ValueError("Given coord was not on board")
         currentPiece = self.getPiece(x,y)
