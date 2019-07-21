@@ -6,8 +6,20 @@ class Board():
     def __init__(self):
         board = []
         for i in range(7):
-            board.append([None,None, None,None,None,None,])
+            board.append([None,None, None,None,None,None])
         self._board = board
+
+
+    def __str__(self):
+        returnString = ""
+        for i in range(5,-1,-1):
+            line = ""
+            b = self.getBoard()
+            for column in b:
+                line += str(column[i]) + ", "
+            returnString += line + "\n"
+        return returnString
+
 
 
     def getPiece(self,x,y):
@@ -124,11 +136,7 @@ if __name__ == "__main__":
     board = Board()
     while True:
         b = board.getBoard()
-        for i in range(5,-1,-1):
-            m = ""
-            for column in b:
-                m += str(column[i]) + ", "
-            print(m)
+        print(b)
         x = input("X: ")
         colour = input("Colour: ")
         x, y = board.placePiece(int(x),colour)

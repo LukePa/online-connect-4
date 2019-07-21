@@ -1,4 +1,4 @@
-import socket, connect4logic, threading
+import socket, connect4logic, threading, time
 
 PORT = 7890
 
@@ -41,15 +41,23 @@ class Player(object):
             self._colour = "yellow"
         else:
             raise ValueError("Argument must be 'red' or 'yellow'")
+            return 0
+        self.sendMessage(colour.lower())
 
     def getSock(self):
         return self._sock
 
     def getMessage(self):
         """Wait until you get message from player and return it"""
-        message = self._sock.recv(4096)
-        messageDecoded = message.decode()
-        return messageDecoded
+        while True:
+            try:
+                message = self._sock.recv(4096)
+                messageDecoded = message.decode()
+                return messageDecoded
+            except socket.timeout:
+                continue
+            except ConnectionResetError:
+                return None
 
     def sendMessage(self, message):
         """Send a string to the player"""
@@ -96,8 +104,6 @@ class Gameroom(object):
         """Runs as thread, handles gameloop that players interact with"""
         self._players[0].setColour("red")
         self._players[1].setColour("yellow")
-        for player in self._players:
-            player.sendMessage(player.getColour())
         whosTurn = self._players[0]
         exit = False
         turn = 0
@@ -109,50 +115,42 @@ class Gameroom(object):
                 if whosTurn == player:
                     player.sendMessage("yours")
                 else:
-                    player.sendMessage("other")
+                    otherPlayer = player
+                    otherPlayer.sendMessage("other")
 
             while True:
                 move = whosTurn.getMessage()
                 columnNum = int(move)
-                isValid = self.board.fullColumn(columnNum)
-                if isValid:
+                invalid = self.board.fullColumn(columnNum)
+                if not invalid:
                     whosTurn.sendMessage("confirmed")
+                    otherPlayer.sendMessage(move)
                     lastMove = self.board.placePiece(columnNum, whosTurn.getColour())
                     break
                 else:
                     whosTurn.sendMessage("denied")
 
-            if self._players[0] == whosTurn:
-                self._players[1].sendMessage(str(columnNum))
-            else:
-                self._players[0].sendMessage(str(columnNum))
 
             win = self.board.checkWin(lastMove)
             if not win:
                 for player in self._players:
                     player.sendMessage("false")
-                if whosTurn == self._players[0]:
-                    whosTurn = self._players[1]
-                else:
-                    whosTurn = self._players[0]
+                whosTurn = otherPlayer
             else:
-                if whosTurn == self._players[0]:
-                    loser = self._players[1]
-                    winner = self._playrs[0]
-                else:
-                    loser = self._players[0]
-                    winner = self._players[1]
-                winner.sendMessage("won")
-                loser.sendMessage("lose")
+                whosTurn.sendMessage("won")
+                otherPlayer.sendMessage("lose")
+                break
 
-            turn += 1
+                turn += 1
 
 
     def _start(self):
         """Starts the gameloop"""
+        time.sleep(0.5)
         self._gameThread = threading.Thread(target = self._gameThreadMethod)
         for player in self._players:
             player.sendMessage("start")
+        #Sleep for buffer so second player not overloaded
         print("A game has started")
         self._gameThread.start()
 
