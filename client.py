@@ -1,4 +1,4 @@
-import socket, sys, pygame, connect4logic
+import socket, sys, time, pygame, connect4logic
 
 
 class GameClient(object):
@@ -100,8 +100,8 @@ class GameClient(object):
 
 
     def doMove(self, columnNum, colour):
-        move = self.gameBoard.placePiece(columnNum, colour)
-        #self.renderer.moveAnimation(move, colour)
+        self.renderer.animateFallingPiece(colour, columnNum, self.gameBoard)
+        self.gameBoard.placePiece(columnNum, colour)
 
 
     def win(self):
@@ -161,12 +161,43 @@ class Renderer(object):
         self.YELLOW = (255, 255, 0)
         self.CRIMSON = (220, 20, 60)
         self.BLUE = (0, 0, 255)
+        self.BACKGROUNDCOL = self.GREEN
+        self.REDPIECECOL = self.CRIMSON
+        self.YELLOWPIECECOL = self.YELLOW
         self._surface = pygame.display.set_mode((self.WIDTH,self.HEIGHT))
         pygame.display.set_caption("Connect 4")
 
 
     def renderBackground(self, backgroundColour):
         self._surface.fill(backgroundColour)
+
+
+    def animateFallingPiece(self, pieceColour, columnNum, board):
+        if pieceColour.lower() == "red":
+            colour = self.REDPIECECOL
+        elif pieceColour.lower() == "yellow":
+            colour = self.YELLOWPIECECOL
+        xPosition = (columnNum * self.TILESIZE) + self.TILESIZE//2
+        yPosition = 0
+        column = board.getBoard()[columnNum]
+        counter = 0
+        for place in column:
+            if place == None:
+                break
+            else:
+                counter += 1
+        finalyPosition = (abs(5-counter) * self.TILESIZE) + self.TILESIZE//2
+        finished = False
+        while not finished:
+            self.renderBackground(self.BACKGROUNDCOL)
+            self.renderPieces(self.REDPIECECOL, self.YELLOWPIECECOL, board)
+            if yPosition >= finalyPosition:
+                yPosition = finalyPosition
+                finished = True
+            pygame.draw.circle(self._surface, colour, (xPosition, yPosition), self.TILESIZE//2)
+            pygame.display.update()
+            yPosition += 5
+            time.sleep(0.1)
 
 
     def renderPieces(self, redColour, yellowColour, board):
@@ -187,8 +218,8 @@ class Renderer(object):
 
 
     def renderBoard(self, board):
-        self.renderBackground(self.GREEN)
-        self.renderPieces(self.CRIMSON, self.YELLOW, board)
+        self.renderBackground(self.BACKGROUNDCOL)
+        self.renderPieces(self.REDPIECECOL, self.YELLOWPIECECOL, board)
         pygame.display.update()
 
 
