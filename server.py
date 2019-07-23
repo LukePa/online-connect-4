@@ -63,7 +63,10 @@ class Player(object):
         """Send a string to the player"""
         if type(message) != str:
             raise TypeError("Arg must be a string")
+        if "&" in message:
+            raise ValueError("Message cant contain '&'")
         else:
+            message = message + "&"
             self._sock.sendall(message.encode())
         
     

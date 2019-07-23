@@ -22,7 +22,7 @@ class Board():
 
 
 
-    def getPiece(self,x,y):
+    def getPiece(self, x, y):
         if not self.onBoard(x,y):
             raise ValueError("Given coords not on board")
         return self._board[x][y]
