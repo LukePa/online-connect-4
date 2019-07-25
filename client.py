@@ -44,6 +44,8 @@ class GameClient(object):
                     message += charDecoded
                 else:
                     return message
+                if pygame.get_init():
+                    pygame.display.update()
             except socket.timeout:
                 message = ""
                 continue
@@ -77,6 +79,7 @@ class GameClient(object):
 
     def yourTurn(self):
         """Runs if it is your turn"""
+        pygame.display.set_caption("Your turn! Click a column to put make move")
         while True:
             move = self.getInputMove()
             self.sendMessage(move)
@@ -90,13 +93,33 @@ class GameClient(object):
 
     def otherTurn(self):
         """Runs if its the other players turn"""
+        pygame.display.set_caption("Other players turn.")
         move = self.recieveMessage()
         self.doMove(int(move), self._otherColour)
 
 
     def getInputMove(self):
-        move = input("Move: ")
-        return move
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.MOUSEBUTTONUP:
+                    mousePos = pygame.mouse.get_pos()
+                    columnNum = self.getClickedColumn(mousePos)
+                    if columnNum < 0 or columnNum > 6:
+                        continue
+                    else:
+                        return str(columnNum)
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+            pygame.display.update()
+
+
+    def getClickedColumn(self, mousePos):
+        x = mousePos[0]
+        y = mousePos[1]
+        columnNum = x//60
+        print(columnNum)
+        return columnNum
 
 
     def doMove(self, columnNum, colour):
@@ -114,6 +137,7 @@ class GameClient(object):
 
 
     def initialise(self):
+        pygame.init()
         self.gameBoard = connect4logic.Board()
         self.renderer = Renderer()
 
@@ -130,7 +154,6 @@ class GameClient(object):
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     sys.exit()
-            self.renderer.testRender(self.gameBoard)
             self.renderer.renderBoard(self.gameBoard)
             whosTurn = self.recieveMessage()
             if whosTurn == "yours":
@@ -164,12 +187,13 @@ class Renderer(object):
         self.BACKGROUNDCOL = self.GREEN
         self.REDPIECECOL = self.CRIMSON
         self.YELLOWPIECECOL = self.YELLOW
+        self.FRAMECOL = self.BLUE
         self._surface = pygame.display.set_mode((self.WIDTH,self.HEIGHT))
         pygame.display.set_caption("Connect 4")
 
 
-    def renderBackground(self, backgroundColour):
-        self._surface.fill(backgroundColour)
+    def renderBackground(self):
+        self._surface.fill(self.BACKGROUNDCOL)
 
 
     def animateFallingPiece(self, pieceColour, columnNum, board):
@@ -189,27 +213,40 @@ class Renderer(object):
         finalyPosition = (abs(5-counter) * self.TILESIZE) + self.TILESIZE//2
         finished = False
         while not finished:
-            self.renderBackground(self.BACKGROUNDCOL)
-            self.renderPieces(self.REDPIECECOL, self.YELLOWPIECECOL, board)
+            self.renderBackground()
+            self.renderPieces(board)
             if yPosition >= finalyPosition:
                 yPosition = finalyPosition
                 finished = True
             pygame.draw.circle(self._surface, colour, (xPosition, yPosition), self.TILESIZE//2)
+            self.renderBoardFrame()
             pygame.display.update()
-            yPosition += 5
+            yPosition += 10
             time.sleep(0.1)
 
 
-    def renderPieces(self, redColour, yellowColour, board):
+    def renderBoardFrame(self):
+        frameSurface = pygame.Surface((self.WIDTH, self.HEIGHT))
+        frameSurface.fill(self.FRAMECOL)
+        frameSurface.set_colorkey((0,0,0))
+        for x in range(7):
+            for y in range(6):
+                xPosition = (x*self.TILESIZE) + self.TILESIZE//2
+                yPosition = (y*self.TILESIZE) + self.TILESIZE//2
+                pygame.draw.circle(frameSurface, (0,0,0), (xPosition, yPosition), self.TILESIZE//2)
+        self._surface.blit(frameSurface, (0,0))
+
+
+    def renderPieces(self, board):
         for x in range(7):
             for y in range (6):
                 piece = board.getPiece(x, y)
                 if piece == None:
                     continue
                 elif piece.lower() == "red":
-                    colour = redColour
+                    colour = self.REDPIECECOL
                 elif piece.lower() == "yellow":
-                    colour = yellowColour
+                    colour = self.YELLOWPIECECOL
                 else:
                     continue
                 xPosition = (x * self.TILESIZE) + self.TILESIZE//2
@@ -218,8 +255,9 @@ class Renderer(object):
 
 
     def renderBoard(self, board):
-        self.renderBackground(self.BACKGROUNDCOL)
-        self.renderPieces(self.REDPIECECOL, self.YELLOWPIECECOL, board)
+        self.renderBackground()
+        self.renderPieces(board)
+        self.renderBoardFrame()
         pygame.display.update()
 
 
@@ -230,7 +268,6 @@ class Renderer(object):
 
 
 def main():
-    pygame.init()
     gameClient = GameClient()
     gameClient.accessServer()
     gameClient.waitForStart()
