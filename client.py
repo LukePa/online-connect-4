@@ -118,7 +118,6 @@ class GameClient(object):
         x = mousePos[0]
         y = mousePos[1]
         columnNum = x//60
-        print(columnNum)
         return columnNum
 
 
@@ -221,7 +220,7 @@ class Renderer(object):
             pygame.draw.circle(self._surface, colour, (xPosition, yPosition), self.TILESIZE//2)
             self.renderBoardFrame()
             pygame.display.update()
-            yPosition += 10
+            yPosition += 20
             time.sleep(0.1)
 
 
@@ -233,7 +232,7 @@ class Renderer(object):
             for y in range(6):
                 xPosition = (x*self.TILESIZE) + self.TILESIZE//2
                 yPosition = (y*self.TILESIZE) + self.TILESIZE//2
-                pygame.draw.circle(frameSurface, (0,0,0), (xPosition, yPosition), self.TILESIZE//2)
+                pygame.draw.circle(frameSurface, (0,0,0), (xPosition, yPosition), (self.TILESIZE//2)-5)
         self._surface.blit(frameSurface, (0,0))
 
 
